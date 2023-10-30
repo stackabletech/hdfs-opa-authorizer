@@ -1,0 +1,63 @@
+---
+apiVersion: zookeeper.stackable.tech/v1alpha1
+kind: ZookeeperCluster
+metadata:
+  name: simple-zk
+spec:
+  image:
+    productVersion: 3.8.3
+  servers:
+    roleGroups:
+      default:
+        replicas: 1
+---
+apiVersion: zookeeper.stackable.tech/v1alpha1
+kind: ZookeeperZnode
+metadata:
+  name: simple-hdfs-znode
+spec:
+  clusterRef:
+    name: simple-zk
+---
+apiVersion: hdfs.stackable.tech/v1alpha1
+kind: HdfsCluster
+metadata:
+  name: simple-hdfs
+spec:
+  image:
+    productVersion: 3.3.6
+    custom: docker.stackable.tech/stackable-experimental/hdfs:3.3.6-stackable0.0.0-authorizer
+  clusterConfig:
+    dfsReplication: 1
+    zookeeperConfigMapName: simple-hdfs-znode
+    authentication:
+      tlsSecretClass: tls
+      kerberos:
+        secretClass: kerberos-default
+  nameNodes:
+    roleGroups:
+      default:
+        envOverrides:
+          HADOOP_CLASSPATH: /stackable/authorizer
+        configOverrides: # on rolegroup level, takes precedence over the ones specified at role level
+          hdfs-site.xml:
+            dfs.namenode.inode.attributes.provider.class: tech.stackable.HdfsOpaAuthorizer
+          core-site.xml:
+            hadoop.security.authorization: "true"
+        replicas: 2
+  dataNodes:
+    roleGroups:
+      default:
+        configOverrides: # on rolegroup level, takes precedence over the ones specified at role level
+          hdfs-site.xml:
+            dfs.namenode.inode.attributes.provider.class: tech.stackable.HdfsOpaAuthorizer
+        replicas: 1
+  journalNodes:
+    roleGroups:
+      default:
+        configOverrides: # on rolegroup level, takes precedence over the ones specified at role level
+          hdfs-site.xml:
+            dfs.namenode.inode.attributes.provider.class: tech.stackable.HdfsOpaAuthorizer
+          core-site.xml:
+            hadoop.security.authorization: "true"
+        replicas: 1
