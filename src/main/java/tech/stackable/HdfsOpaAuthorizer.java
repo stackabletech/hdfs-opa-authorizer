@@ -9,10 +9,12 @@ import org.apache.hadoop.hdfs.server.namenode.INodeAttributeProvider;
 import org.apache.hadoop.hdfs.server.namenode.INodeAttributes;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.eclipse.jetty.server.Authentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.List;
 
 public class HdfsOpaAuthorizer extends INodeAttributeProvider {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsOpaAuthorizer.class);
@@ -68,6 +70,7 @@ public class HdfsOpaAuthorizer extends INodeAttributeProvider {
 
         public void checkPermissionWithContext(AuthorizationContext authzContext) throws AccessControlException {
             ContextWrapper ctx = new ContextWrapper(authzContext);
+            UserGroupInformation ugi = authzContext.getCallerUgi();
             this.writer.println("Got request\n");
             if (this.writer != null) {
                 try {
@@ -88,7 +91,7 @@ public class HdfsOpaAuthorizer extends INodeAttributeProvider {
     private class ContextWrapper {
         public java.lang.String fsOwner;
         public java.lang.String supergroup;
-        //public org.apache.hadoop.security.UserGroupInformation callerUgi;
+        public UgiWrapper callerUgi;
         public org.apache.hadoop.hdfs.server.namenode.INodeAttributes[] inodeAttrs;
         public org.apache.hadoop.hdfs.server.namenode.INode[] inodes;
         public byte[][] pathByNameArr;
@@ -107,7 +110,7 @@ public class HdfsOpaAuthorizer extends INodeAttributeProvider {
         public ContextWrapper(AuthorizationContext context) {
             this.fsOwner = context.getFsOwner();
             this.supergroup = context.getSupergroup();
-            //this.callerUgi = context.getCallerUgi();
+            this.callerUgi = new UgiWrapper(context.getCallerUgi());
             this.inodeAttrs = context.getInodeAttrs();
             this.inodes = context.getInodes();
             this.pathByNameArr = context.getPathByNameArr();
@@ -122,6 +125,27 @@ public class HdfsOpaAuthorizer extends INodeAttributeProvider {
             this.ignoreEmptyDir = context.isIgnoreEmptyDir();
             this.operationName = context.getOperationName();
             this.callerContext = context.getCallerContext();
+        }
+    }
+    private class UgiWrapper {
+        public UserGroupInformation.AuthenticationMethod authenticationMethod;
+        public UserGroupInformation.AuthenticationMethod realAuthenticationMethod;
+
+        public List<String> groups;
+        public String primaryGroup;
+
+        public UserGroupInformation realUser;
+
+        public UgiWrapper(UserGroupInformation ugi) {
+            this.authenticationMethod = ugi.getAuthenticationMethod();
+            this.realAuthenticationMethod = ugi.getRealAuthenticationMethod();
+            this.groups = ugi.getGroups();
+            try {
+                this.primaryGroup = ugi.getPrimaryGroupName();
+            } catch (IOException e) {
+                this.primaryGroup = null;
+            }
+            this.realUser = ugi.getRealUser();
         }
     }
 }

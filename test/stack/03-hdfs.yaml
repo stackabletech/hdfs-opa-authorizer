@@ -26,8 +26,9 @@ metadata:
 spec:
   image:
     productVersion: 3.3.6
-    custom: docker.stackable.tech/stackable-experimental/hdfs:3.3.6-stackable0.0.0-authorizer
+    custom: hdfs
   clusterConfig:
+    listenerClass: external-unstable
     dfsReplication: 1
     zookeeperConfigMapName: simple-hdfs-znode
     authentication:
@@ -38,12 +39,14 @@ spec:
     roleGroups:
       default:
         envOverrides:
-          HADOOP_CLASSPATH: /stackable/authorizer
+          HADOOP_CLASSPATH: "/stackable/hadoop/share/hadoop/tools/lib/*.jar"
+          TOPOLOGYLABEL1: "node:kubernetes.io/hostname"
         configOverrides: # on rolegroup level, takes precedence over the ones specified at role level
           hdfs-site.xml:
             dfs.namenode.inode.attributes.provider.class: tech.stackable.HdfsOpaAuthorizer
           core-site.xml:
             hadoop.security.authorization: "true"
+            net.topology.node.switch.mapping.impl: "tech.stackable.hadoop.StackableTopologyProvider"
         replicas: 2
   dataNodes:
     roleGroups:
