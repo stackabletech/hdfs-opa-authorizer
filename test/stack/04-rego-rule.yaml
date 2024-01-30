@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hdfs-opa-bundle
+  labels:
+    opa.stackable.tech/bundle: "trino"
+data:
+  hdfs.rego: |
+    package hdfs
+
+    default allow = true
