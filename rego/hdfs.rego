@@ -31,7 +31,9 @@ matches_resource(file, resource) if {
 
 # Resource mentions a folder higher up the tree, which will will grant access recursively
 matches_resource(file, resource) if {
-	startswith(resource, "hdfs:dir:")
+	startswith(resource, "hdfs:dir:/")
+	# dirs need to have a trailing slash
+	endswith(resource, "/")
 	startswith(file, trim_prefix(resource, "hdfs:dir:"))
 }
 
@@ -63,11 +65,11 @@ acls := [
 	{
 		"identity": "user:HTTP",
 		"action": "ro",
-		"resource": "hdfs:dir:/ro",
+		"resource": "hdfs:dir:/ro/",
 	},
 	{
 		"identity": "user:HTTP",
 		"action": "full",
-		"resource": "hdfs:dir:/ro/full",
+		"resource": "hdfs:dir:/ro/full/",
 	},
 ]
