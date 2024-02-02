@@ -1,4 +1,4 @@
-package authz
+package hdfs
 
 import rego.v1
 
@@ -10,7 +10,6 @@ allow if {
 	matches_resource(input.path, acl.resource)
 	action_sufficient_for_operation(acl.action, input.operationName)
 }
-
 
 # Identity mentions the user explicitly
 matches_identity(user, identity) if {
@@ -51,21 +50,21 @@ action_hierarchy := {
 action_for_operation := {
 	"getfileinfo": "ro",
 	"listStatus": "ro",
-	"delete": "full", # TODO: Made up example, remove
+	"delete": "full",
 }
 
 groups := {"HTTP": ["http-group"]}
 
 acls := [
+#	{
+#		"identity": "user:HTTP",
+#		"action": "full",
+#		"resource": "hdfs:file:/hosts",
+#	},
 	{
-		"identity": "user:HTTP",
+		"identity": "group:http-group",
 		"action": "full",
-		"resource": "hdfs:file:/hosts",
-	},
-	{
-		"identity": "user:HTTP",
-		"action": "ro",
-		"resource": "hdfs:dir:/ro/",
+		"resource": "hdfs:dir:/",
 	},
 	{
 		"identity": "user:HTTP",
